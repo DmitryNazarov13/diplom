@@ -186,3 +186,58 @@ func TestCreateProduct(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 		}
+package routes_test;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class FinanceRoutesTest {
+
+scss
+Copy code
+private MockMvc mockMvc;
+
+@Test
+public void testCreateFinance() throws Exception {
+    mockMvc = MockMvcBuilders.standaloneSetup(new FinanceController()).build();
+
+    // Тестируем успешный запрос
+    Finance finance = new Finance(100, 200, 50, 30, 20);
+    ObjectMapper objectMapper = new ObjectMapper();
+    String financeJSON = objectMapper.writeValueAsString(finance);
+    MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/finances")
+            .contentType(MediaType.APPLICATION_JSON_VALUE).content(financeJSON)).andReturn();
+    MockHttpServletResponse response = result.getResponse();
+    assertEquals(200, response.getStatus());
+
+    // Проверяем, что ответ содержит все поля модели Finance
+    String responseContent = response.getContentAsString(StandardCharsets.UTF_8);
+    Finance responseFinance = objectMapper.readValue(responseContent, Finance.class);
+    assertNotNull(responseFinance.getId());
+    assertEquals(finance.getProfit(), responseFinance.getProfit());
+    assertEquals(finance.getRevenue(), responseFinance.getRevenue());
+    assertEquals(finance.getCost(), responseFinance.getCost());
+    assertEquals(finance.getTaxes(), responseFinance.getTaxes());
+    assertEquals(finance.getExpenses(), responseFinance.getExpenses());
+
+    // Тестируем ошибку при неправильных входных данных
+    Finance invalidFinance = new Finance();
+    String invalidFinanceJSON = objectMapper.writeValueAsString(invalidFinance);
+    result = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/finances")
+            .contentType(MediaType.APPLICATION_JSON_VALUE).content(invalidFinanceJSON)).andReturn();
+    response = result.getResponse();
+    assertEquals(400, response.getStatus());
+}
